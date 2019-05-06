@@ -20,10 +20,9 @@ class Tanh(Module):
         
         numerator = torch.exp(to_compute) - torch.exp(-to_compute)
         denominator = torch.exp(to_compute) + torch.exp(-to_compute)
-        
         return numerator/denominator
         
         
     def tanh_p(self, x):
-
+        # 4 / (torch.exp(x) + torch.exp(-x)) ** 2
         return (1 - torch.pow(self.tanh(x),2))

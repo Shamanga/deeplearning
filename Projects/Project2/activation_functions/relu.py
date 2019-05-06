@@ -22,6 +22,7 @@ class Relu(Module):
         return torch.clamp(x, min =0)
     
     def relu_p(self, x):
+        # (torch.sign(x)+1)/2
 
         x[x>0] = 1
         x[x<=0] = 0
