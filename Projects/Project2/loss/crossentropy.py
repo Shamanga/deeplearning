@@ -1,14 +1,24 @@
 import torch
 
 class CrossEntropy:
+    """
+    Implementation of the Cross entropy loss
+    Functions:
+        - cross_entropy: Computing the cross entropy
+        - cross_entropy_p: The derivative of the cross entropy
     
-    def cross_entropy_torch(predictions, targets, epsilon=1e-20):
+    """
+    
+    def cross_entropy(predictions, targets, epsilon=1e-20):
         """
         Computes cross entropy between targets
         and predictions. 
-        Input: predictions (N, #ofclasses) FloatTensor
-               targets (N, 1) LongTensor        
-        Returns: average loss
+        Args: 
+            - predictions: Predictions of the network
+            - targets: The true targets of the samples
+            - epsilon: A value to avoid overflow of numbers
+        Returns: 
+            - average_ce_loss: The average cross entropy loss
         """
         # Clamping the predictions between epsilon and 1 - epsilon
         predictions_clamped = predictions.clamp(epsilon, 1-epsilon)
@@ -24,14 +34,17 @@ class CrossEntropy:
         return average_ce_loss
     
     
-    def cross_entropy_troch_p(predictions, targets, epsilon=1e-20):
+    def cross_entropy_p(predictions, targets, epsilon=1e-20):
         
         """
         Computes cross entropy derivative between targets
-        and predictions. 
-        Input: predictions (N, #ofclasses) FloatTensor
-               targets (N, 1) LongTensor        
-        Returns: derivative
+        and predictions.
+        Args: 
+            - predictions: Predictions of the network
+            - targets: The true targets of the samples
+            - epsilon: A value to avoid overflow of numbers
+        Returns: 
+            - derivative: The derivative of the cross entropy
         """
         
         # Number of examples

@@ -2,11 +2,32 @@ import torch
 
 class Sequential:
     
+    """
+    Implementation of the Sequential layer
+    Functions:
+        - forward: Forward pass
+        - backward: backward pass
+        - param: Parameters of each layer
+    
+    """
+    
     def __init__(self, layers):
+        """
+        layers: The layers of the network
+        """
         
         self.layers = layers
         
     def forward(self, initial_input):
+        
+        """
+        The forward pass
+        
+        Args: 
+            - initial_input: The initial input that starts at the first layer
+        Returns:
+            - output_single_layer: The output of the last layer
+        """
         
         # initial input
         output_single_layer = initial_input
@@ -23,6 +44,15 @@ class Sequential:
     
     def backward(self, initial_backward_input):
         
+        """
+        The Backward pass
+        
+        Args: 
+            - initial_backward_input: The gradient of the loss, as the first input to the backpass
+        Returns:
+            - output_single_layer_backward: The output of the derivatives in the end
+        """
+        
         # Starting with the derivative of the loss
         # We backpropagate by calling the backward
         # function of each layer 
@@ -36,10 +66,20 @@ class Sequential:
     
     def param(self):
         
+        """
+        The Parameters
+        
+        Args: 
+
+        Returns:
+            - parameters_of_each_layer: The parameters of each layer
+        """
+        
         parameters_of_each_layer = []
         for layer in self.layers:
             
-            parameters_of_each_layer.append(layer.param)
+            parameters_of_each_layer.append(layer.param())
             
         return parameters_of_each_layer
+            
             
