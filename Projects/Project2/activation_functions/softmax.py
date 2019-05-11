@@ -28,7 +28,7 @@ class Softmax(Module):
         # Grabbing the input, which is the output of the previous layer
         self.input_from_layer = input[0]
         # Passing the input through the activation function
-        forward_pass = self._softmax(input_from_layer)
+        forward_pass = self._softmax(self.input_from_layer)
         
         return forward_pass
     
@@ -60,7 +60,7 @@ class Softmax(Module):
             - activation_output: Tensor applied to it the activation function
         """
         
-        input_to_compute_v = input_to_compute.view(-1,1)
+        input_to_compute_v = to_compute.view(-1,1)
         
         norm_value = input_to_compute_v.max()
         
@@ -98,4 +98,4 @@ class Softmax(Module):
                 else:
                     activation_derivative[i][j] = -softmax_res[i] * softmax_res[j]
                     
-        return activation_derivative
+        return activation_derivative.diag()

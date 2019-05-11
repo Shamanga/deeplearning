@@ -1,4 +1,5 @@
 import torch
+import copy
 
 class RunNetwork:
 
@@ -6,7 +7,9 @@ class RunNetwork:
     Implementation of the RunNetwork class
     Functions:
         - run_network: Training and Testing the network
-
+        - network_computations: Calculating the accuracy and loss of the training and testing
+        - predict_test: To test after the model finished training
+        - early_stopping: Checks which model produced the best testing accuracy
     """
 
     def __init__(self, epochs, train_class, test_class, model, loss, optimizer, samples):
@@ -27,8 +30,12 @@ class RunNetwork:
         self.loss = loss
         self.optimizer = optimizer
         self.samples = samples
-    
-    
+        
+        # For logging purposes
+        self.best_accuracy = 0.5
+        self.training_param = []
+        self.testing_param = []
+        
     def run_network(self):
         """
         Running the network over the specified number of epochs
@@ -39,14 +46,16 @@ class RunNetwork:
         """
         for epoch in range(self.epochs):
             
-            train_accuracy, train_average_loss = self.network_computations(training=True)
-            test_accuracy, test_average_loss = self.network_computations(training=False)
+            train_accuracy, train_average_loss = self._network_computations(training=True)
+            test_accuracy, test_average_loss = self._network_computations(training=False)
             
                     
             print("Epoch: {}/{} ---- Train Accuracy : {} ---- Train Loss: {} ---- Test Accuracy: {} ---- Test Loss: {} "\
                   .format(epoch+1,self.epochs,train_accuracy, round(train_average_loss.item(),3),test_accuracy,round(test_average_loss.item(),3)))
-
-    def network_computations(self,training = True):
+        
+        print("The best model results in: Test Accuracy: {} ---- Test Loss: {}".format(self.best_accuracy, self.lowest_loss))
+              
+    def _network_computations(self,training = True):
         
         """
         Running the network either in training or testing mode.
@@ -65,6 +74,7 @@ class RunNetwork:
         
         # If we are training then we fetch the training data class
         if training:
+            
             data_loader = self.train_class
         # If we are testing then we fetch the testing data class
         else:
@@ -99,8 +109,65 @@ class RunNetwork:
             if training:
                 self.optimizer.update_parameters()
         
-        # Calculating the accuracy and average loss
-        accuracy = predicted_correctly / self.samples
-        average_loss = total_loss / self.samples
-        
+        if training:
+            # Calculating the training accuracy and average loss
+            accuracy = predicted_correctly / self.samples
+            average_loss = total_loss / self.samples
+            # Logging the accuracy and loss for every training epoch
+            self.training_param.append((accuracy, average_loss.item()))
+        else:
+            # Calculating the testing accuracy and average loss
+            accuracy = predicted_correctly / self.samples
+            average_loss = total_loss / self.samples
+            # Checking best testing accuracy
+            self._early_stopping(accuracy,average_loss)
+            # Logging the accuracy and loss for every testing epoch
+            self.testing_param.append((accuracy, average_loss.item()))
         return accuracy, average_loss
+    
+    def _early_stopping(self,accuracy, average_loss):
+        """
+        Saving the best model, a.k.a the model with the best testing accuracy
+        
+        Args:
+            - accuracy: The testing accuracy
+            - average_loss: The testing loss
+            
+        """
+        # Check if the current accuracy is better than the recorded one
+        if accuracy > self.best_accuracy:
+            # Deep copying the best model
+            self.best_model = copy.deepcopy(model)
+            # Saving the best accuracy and lowest loss
+            self.best_accuracy=accuracy
+            self.lowest_loss = average_loss
+    
+    def predict_test(self):
+        """
+        A function to get the output of our model once we finished training
+        
+        Args:
+        
+        Returns:
+            - output: A list containing tuples of (predicted output, sample, true target)
+        """
+        output = []
+        
+        for batch_data, batch_target in self.test_class.yield_data():
+
+                # Iterating over each data point in the batch
+                for sample,target in zip(batch_data, batch_target):
+
+                    # Forward pass of the model
+                    predicted = self.best_model.forward(sample)
+                    # Computing the loss of the predicted value
+                    single_loss = self.loss.mse(predicted, target)
+                    
+                    # Obtaining the hot encoded vector of the prediction
+                    predicted_viewed = predicted.view(-1,2)
+                    pred_hot_encoded = (predicted_viewed == predicted_viewed.max(dim=-1, keepdim=True)[0]).view_as(predicted)
+                    
+                    output.append((pred_hot_encoded.type(torch.FloatTensor), sample, target))
+
+
+        return output
