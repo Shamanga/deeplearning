@@ -103,7 +103,7 @@ def test1(network, test_loader):
     test_loss, acc))
     return test_loss, acc
     
-def train2(epoch, network,train_loader,optimizer, alpha):
+def train2(epoch, network,train_loader,optimizer):
     """
     Train the defined network for the given data
     Args:
@@ -143,7 +143,7 @@ def train2(epoch, network,train_loader,optimizer, alpha):
         loss_target = F.nll_loss(labels, target)
         
         # get the final loss by convex combination of digits and targets losses
-        loss = alpha * loss_digits + (1 - alpha) * loss_target
+        loss = loss_digits + loss_target
         
         # Backward propogation
         loss.backward()
@@ -170,7 +170,7 @@ def train2(epoch, network,train_loader,optimizer, alpha):
         train_losses_digits.append(loss_digits.item())
         train_losses_targets.append(loss_target.item())
         train_acc_digits.append((correct_digits / (2*total)) * 100)
-        train_acc_targets.append(correct_target/total * 100)
+        train_acc_targets.append(correct_target / total * 100)
         
         #Print loss and accuracy
         print('Epoch [{}/{}],Step [{}/{}],Loss_digits: {:.4f},Loss_targets: {:.4f},Accuracy_digits: {:.2f}%,Accuracy_labels: {:.2f}%'

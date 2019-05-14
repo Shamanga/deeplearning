@@ -53,32 +53,33 @@ def main():
                                               batch_size=batch_size_test, 
                                               shuffle=False)
     
-    print("Start of the Network 1 ")
-    network1 = NN1()
-    optimizer = optim.SGD(network1.parameters(), lr=learning_rate,momentum=momentum)
-    
-    print("The number of parameters of the network is ", count_parameters(network1))
-    for i in range(iters):
-        for epoch in range(1, n_epochs + 1):
-            start = timer()
-            train_loss, train_acc  = train1(epoch, network1, train_loader, optimizer) 
-            end = timer()
-            print("Time needed to train ", end - start)
-            test_loss, acc = test1(network1, test_loader)
-
     print("\n Start of the Network 2 ")
     network2 = NN2()
-    optimizer = optim.SGD(network2.parameters(), lr=learning_rate, momentum=momentum)
+    optimizer2 = optim.SGD(network2.parameters(), lr=learning_rate, momentum=momentum)
     
     print("The number of parameters of the network is ", count_parameters(network2))
     for i in range(iters):
         for epoch in range(1, n_epochs + 1):
             start = timer()
-            train_losses_digits, train_losses_classes, train_acc_digits, train_acc_classes  = train2(epoch, network2,train_loader,optimizer, 0.5) 
+            train_losses_digits, train_losses_classes, train_acc_digits, train_acc_classes  = train2(epoch, network2,train_loader,optimizer2) 
             end = timer()
             print("Time needed to train ", end - start)
             test_loss_digits, test_loss_targets, acc_digits, acc_target = test2(network2, test_loader)
-            
+    
+   
+    print("Start of the Network 1 ")
+    network1 = NN1()
+    optimizer1 = optim.SGD(network1.parameters(), lr=learning_rate, momentum=momentum)
+    
+    print("The number of parameters of the network is ", count_parameters(network1))
+    for i in range(iters):
+        for epoch in range(1, n_epochs + 1):
+            start = timer()
+            train_loss, train_acc  = train1(epoch, network1, train_loader, optimizer1) 
+            end = timer()
+            print("Time needed to train ", end - start)
+            test_loss, acc = test1(network1, test_loader)
+
 
 if __name__ == '__main__':
     main()
