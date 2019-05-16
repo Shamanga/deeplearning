@@ -31,16 +31,13 @@ def train1(epoch, network, train_loader, optimizer):
     train_acc = []
     for batch_idx, (data, target, classes) in enumerate(train_loader):
         #Clear the gradients
+        total = target.size(0)
         optimizer.zero_grad()
         
         #Forward propagation 
         outputs = network(data)
-        
-        criterion = nn.CrossEntropyLoss()
-        
-        loss = criterion(outputs, target)
-        #Create instance of optimizer (Adam)
-        #optimizer = torch.optim.Adam(network.parameters(), lr=0.0001)
+                
+        loss = F.nll_loss(outputs, target)
         
         #Backward propation
         loss.backward()
@@ -49,7 +46,7 @@ def train1(epoch, network, train_loader, optimizer):
         optimizer.step()
         
         #Total number of labels
-        total = target.size(0)
+        
         
         #Obtaining predictions from max value
         _, predicted = torch.max(outputs.data, 1)
@@ -63,9 +60,7 @@ def train1(epoch, network, train_loader, optimizer):
         
         
         #Print loss and accuracy
-        print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-              .format(epoch + 1, 25, batch_idx + 1, len(train_loader),
-                         loss.item(), correct/total * 100))
+        print('Epoch [{}/{}],Step [{}/{}],Loss: {:.4f} ,Acc_labels: {}/{} ({:.0f}%)'.format(epoch + 1, 25, batch_idx + 1, total, loss.item(), correct, total, correct/(total) * 100 ))
     return train_loss, train_acc
 
 def test1(network, test_loader):
@@ -87,20 +82,19 @@ def test1(network, test_loader):
     
     with torch.no_grad():
         for data, target, classes in test_loader:
+            total = classes[:,0].size(0)
             outputs = network(data)
 
-            criterion = nn.CrossEntropyLoss()
-            test_loss += criterion(outputs, target)
+            test_loss = F.nll_loss(outputs, target)
 
             #Obtaining predictions from max value
             _, predicted = torch.max(outputs.data, 1)
             #Calculate the number of correct answers
             correct += (predicted == target).sum().item()
             
-    acc = 100. * correct /(len(test_loader.dataset))
-    test_loss /= len(test_loader.dataset)
-    print('\nTest set: Avg. loss: {:.4f}, Accuracy_labels: {:.0f}% '.format(
-    test_loss, acc))
+    acc = 100. * correct /(total)
+    
+    print('\nTest set: Loss: {:.4f},Acc_labels: {}/{} {:.0f}%'.format(test_loss, correct, total, acc))
     return test_loss, acc
     
 def train2(epoch, network,train_loader,optimizer):
@@ -122,8 +116,7 @@ def train2(epoch, network,train_loader,optimizer):
     network.train()
     
     correct = 0
-    train_losses_digits = []
-    train_losses_targets = []
+    train_loss = []
     train_acc_digits = []
     train_acc_targets = []
 
@@ -133,13 +126,11 @@ def train2(epoch, network,train_loader,optimizer):
         #Forward propagation 
         digits, labels = network(data)
         
+        #Total number of labels
+        total = classes[:,0].size(0)
+        
         # negative log likelihood of image1 and image2 digit classification loss
-        loss_digit_1 = F.nll_loss(digits[0], classes[:,0])
-        loss_digit_2 = F.nll_loss(digits[1], classes[:,1])
-
-        # get the mean of the loss
-        loss_digits = (loss_digit_1 + loss_digit_2)/2
-        # get the loss of the target classification
+        loss_digits = (F.nll_loss(digits[0], classes[:,0]) + F.nll_loss(digits[1], classes[:,1]))/2
         loss_target = F.nll_loss(labels, target)
         
         # get the final loss by convex combination of digits and targets losses
@@ -150,33 +141,24 @@ def train2(epoch, network,train_loader,optimizer):
         #Updating the parameters
         optimizer.step()
         
-        #Total number of labels
-        total = classes[:,0].size(0)
+        pred_digits_1 = digits[0].data.max(1, keepdim=True)[1]
+        pred_digits_2 = digits[1].data.max(1, keepdim=True)[1]
 
-        #Obtaining predictions from max value
-        _, pred_digits_1 = torch.max(digits[0].data, 1)
-        _, pred_digits_2 = torch.max(digits[1].data, 1)
-        
-        #Calculate the number of correct answers
-        correct_digits = (pred_digits_1 == classes[:,0]).sum().item() + (pred_digits_2 == classes[:,1]).sum().item()
-        
+        correct_digits = (pred_digits_1.eq(classes[:,0].data.view_as(pred_digits_1)).sum() + pred_digits_2.eq(classes[:,1].data.view_as(pred_digits_2)).sum()).item()
         #Obtaining predictions from max value
         _, pred_label = torch.max(labels.data, 1)
-
+        
         #Calculate the number of correct answers
         correct_target = (pred_label == target).sum().item()
         
         # store the loss and acc information for each batch
-        train_losses_digits.append(loss_digits.item())
-        train_losses_targets.append(loss_target.item())
+        train_loss.append(loss.item())
         train_acc_digits.append((correct_digits / (2*total)) * 100)
         train_acc_targets.append(correct_target / total * 100)
         
         #Print loss and accuracy
-        print('Epoch [{}/{}],Step [{}/{}],Loss_digits: {:.4f},Loss_targets: {:.4f},Accuracy_digits: {:.2f}%,Accuracy_labels: {:.2f}%'
-                 .format(epoch + 1, 25, batch_idx + 1, len(train_loader),
-                         loss_digits.item(),loss_target.item(),(correct_digits / (2*total)) * 100, correct_target/total * 100))
-    return train_losses_digits, train_losses_targets, train_acc_digits, train_acc_targets  
+        print('Epoch [{}/{}],Step [{}/{}],Loss: {:.4f}, Acc_digits: {}/{} ({:.0f}%) ,Acc_labels: {}/{} ({:.0f}%)'.format(epoch + 1, 25, batch_idx + 1, total, loss.item(), correct_digits, 2*total, correct_digits/(2*total) * 100,correct_target, total, correct_target/total * 100 ))
+    return train_loss, train_acc_digits, train_acc_targets  
     
     
 def test2(network,test_loader):
@@ -195,33 +177,32 @@ def test2(network,test_loader):
      - acc_target: the accuracy of the classified targets 
     """
     network.eval()
-    test_loss_digits = 0
-    test_loss_target = 0
-    correct_digits = 0
-    correct_label = 0
     
     with torch.no_grad():
         for data, target, classes in test_loader:
             digits, labels = network(data)
+            
+            #Total number of labels
+            total = classes[:,0].size(0)
 
-            test_loss_digits += 0.5*(F.nll_loss(digits[0], classes[:,0], size_average=False).item()+ F.nll_loss(digits[1], classes[:,1], size_average=False).item())
-            test_loss_target += F.nll_loss(labels, target, size_average=False).item()
+            test_loss_digits = (F.nll_loss(digits[0], classes[:,0])+ 
+                                F.nll_loss(digits[1], classes[:,1])) /2
+            test_loss_target = F.nll_loss(labels, target)
+            loss = test_loss_digits + test_loss_target
 
             pred_digits_1 = digits[0].data.max(1, keepdim=True)[1]
             pred_digits_2 = digits[1].data.max(1, keepdim=True)[1]
 
-            correct_digits += pred_digits_1.eq(classes[:,0].data.view_as(pred_digits_1)).sum() + pred_digits_2.eq(classes[:,1].data.view_as(pred_digits_2)).sum()
+            correct_digits = (pred_digits_1.eq(classes[:,0].data.view_as(pred_digits_1)).sum() + pred_digits_2.eq(classes[:,1].data.view_as(pred_digits_2)).sum()).item()
+            
             #Obtaining predictions from max value
             _, pred_label = torch.max(labels.data, 1)
-    
             #Calculate the number of correct answers
-            correct_label += (pred_label == target).sum().item()
-    acc_target = 100. * correct_label /(len(test_loader.dataset))
-    acc_digits = 100. * correct_digits /( 2* len(test_loader.dataset))
-    test_loss_digits /= len(test_loader.dataset)
-    test_loss_target /= len(test_loader.dataset)
-    print('\nTest set:Avg. loss_digits: {:.4f},Avg. loss_targets: {:.4f},Accuracy_digits: {}/{} ({:.0f}%)\n,Accuracy_labels: {:.0f}%'.format(
-    test_loss_digits, test_loss_target, correct_digits, 2*len(test_loader.dataset),
-    acc_digits, acc_target))
-    return test_loss_digits, test_loss_target, acc_digits, acc_target
+            correct_label = (pred_label == target).sum().item()
+            
+    acc_target = 100. * correct_label /(total)
+    acc_digits = 100. * correct_digits /( 2* total)
+    
+    print('\nTest set: Loss: {:.4f},Acc_digits: {}/{} ({:.0f}%),Acc_labels: {}/{} {:.0f}%'.format(loss.item(), correct_digits, 2*total, acc_digits, correct_label, total, acc_target))
+    return loss.item(), acc_digits, acc_target
     

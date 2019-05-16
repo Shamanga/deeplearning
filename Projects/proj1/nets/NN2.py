@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch.nn.functional as F
-
 class NN2(nn.Module):
     """
     Implementation of Neural Network: with 2 subnetwork architecture to learn the additional information besides the targets
@@ -43,7 +42,7 @@ class NN2(nn.Module):
     def forward(self, data):
         """
         The forward pass iterates through the 2d data and for each applies the network to learn 
-        both the digits classes and targets.
+        both the digits' classes and targets.
         
         Args: 
             - data: The input data
@@ -87,11 +86,8 @@ class NN2(nn.Module):
         y = F.relu(self.fc4(y))
         # Linear function5, relu
         y = F.relu(self.fc5(y))
-        # Linear function6, relu
-        y = F.relu(self.fc6(y))
+        # Linear function6
+        y = self.fc6(y)
         # get the binary value as a target
         targets = F.log_softmax(y)
         return digits, targets
-  
-
-    
