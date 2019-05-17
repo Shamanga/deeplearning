@@ -10,9 +10,9 @@ from utils.run_network import RunNetwork
 #### Parameters ####
 samples = 1000
 features = 2
-batch = 25
+batch = 32
 to_shuffle = True
-number_of_epochs = 100
+number_of_epochs = 500
 #### Parameters ####
 
 def main():

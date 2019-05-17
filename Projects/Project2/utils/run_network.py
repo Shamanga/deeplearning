@@ -137,7 +137,7 @@ class RunNetwork:
         # Check if the current accuracy is better than the recorded one
         if accuracy > self.best_accuracy:
             # Deep copying the best model
-            self.best_model = copy.deepcopy(model)
+            self.best_model = copy.deepcopy(self.model)
             # Saving the best accuracy and lowest loss
             self.best_accuracy=accuracy
             self.lowest_loss = average_loss
