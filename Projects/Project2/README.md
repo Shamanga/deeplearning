@@ -57,6 +57,7 @@ The network parameters are:
   * Shuffle: True
   * Learning rate : 0.01
   * Early stopping: True
+  * Batch size: 32
   
 ## Authors
   * Mariam Hakobyan : mariam.hakobyan@epfl.ch
